@@ -1,0 +1,65 @@
+{% extends "notifications/email/base_email.html" %}
+
+{% block subject %}Потвърждение за регистрация — {{ event.title }}{% endblock %}
+{% block header_color %}#198754{% endblock %}
+{% block header %}Регистрацията Ви е потвърдена{% endblock %}
+
+{% block content %}
+    <p style="margin:0 0 16px; font-size:15px;">
+        Здравейте, <strong>{{ registration.contact_name }}</strong>!
+    </p>
+    <p style="margin:0 0 20px; font-size:15px;">
+        Плащането по заявка <strong>{{ registration.code }}</strong> е прието успешно и
+        билетите Ви за събитието „<strong>{{ event.title }}</strong>“ са издадени.
+    </p>
+
+    <h2 style="margin:24px 0 8px; font-size:16px; color:#0d6efd;">Данни за събитието</h2>
+    <table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="font-size:14px; border-collapse:collapse;">
+        <tr>
+            <td style="width:120px; color:#6c757d;">Начало</td>
+            <td><strong>{{ event.starts_at|date:"d.m.Y, H:i" }} ч.</strong></td>
+        </tr>
+        <tr>
+            <td style="color:#6c757d;">Край</td>
+            <td>{{ event.ends_at|date:"d.m.Y, H:i" }} ч.</td>
+        </tr>
+        <tr>
+            <td style="color:#6c757d;">Локация</td>
+            <td>{{ event.venue.name }}<br>{{ event.venue.address }}, {{ event.venue.city }}</td>
+        </tr>
+    </table>
+
+    <h2 style="margin:24px 0 8px; font-size:16px; color:#0d6efd;">Вашите билети</h2>
+    <table role="presentation" width="100%" cellpadding="8" cellspacing="0"
+           style="font-size:14px; border-collapse:collapse; border:1px solid #dee2e6;">
+        <tr style="background-color:#f8f9fa;">
+            <th align="left" style="border-bottom:1px solid #dee2e6;">Код</th>
+            <th align="left" style="border-bottom:1px solid #dee2e6;">Тип</th>
+            <th align="right" style="border-bottom:1px solid #dee2e6;">Цена</th>
+        </tr>
+        {% for ticket in tickets %}
+            <tr>
+                <td style="border-bottom:1px solid #f1f3f5;"><code>{{ ticket.short_code }}</code></td>
+                <td style="border-bottom:1px solid #f1f3f5;">{{ ticket.ticket_type.name }}</td>
+                <td align="right" style="border-bottom:1px solid #f1f3f5;">{{ ticket.price_paid }} лв.</td>
+            </tr>
+        {% endfor %}
+        <tr style="background-color:#f8f9fa;">
+            <td colspan="2"><strong>Общо</strong></td>
+            <td align="right"><strong>{{ registration.total_amount }} лв.</strong></td>
+        </tr>
+    </table>
+
+    <p style="margin:20px 0; padding:12px 16px; background-color:#fff3cd; border-left:4px solid #ffc107; font-size:14px;">
+        QR кодовете на билетите са <strong>прикачени към това писмо</strong>. Покажете ги
+        на входа. Всеки билет може да бъде използван само веднъж — при повторно
+        сканиране системата го отхвърля.
+    </p>
+
+    <p style="margin:24px 0 0;">
+        <a href="{{ tickets_url }}"
+           style="display:inline-block; padding:12px 24px; background-color:#0d6efd; color:#ffffff; text-decoration:none; border-radius:6px; font-size:15px;">
+            Вижте билетите си онлайн
+        </a>
+    </p>
+{% endblock %}

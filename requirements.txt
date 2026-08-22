@@ -1,0 +1,11 @@
+# Основни зависимости на проекта "Система за управление на събития"
+# Стек по задание: Python 3, Django, PostgreSQL, библиотека qrcode, Django Auth
+
+Django==5.2.6
+psycopg[binary]==3.2.10
+qrcode[pil]==8.2
+Pillow==11.3.0
+python-dotenv==1.1.1
+
+# requests се използва само от scripts/load_test.py (демонстрация на натоварване)
+requests==2.32.5

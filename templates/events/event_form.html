@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_create %}Ново събитие{% else %}Редакция на {{ event.title }}{% endif %}{% endblock %}
+
+{% block content %}
+    <h1 class="h3 mb-4">
+        {% if is_create %}Създаване на ново събитие{% else %}Редакция на „{{ event.title }}“{% endif %}
+    </h1>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        {# --- Основни данни за събитието --- #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white"><h2 class="h5 mb-0">Основни данни</h2></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            {{ form.title.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.title }}
+                        {{ form.title.errors }}
+                    </div>
+
+                    <div class="col-12">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            {{ form.description.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.description }}
+                        {{ form.description.errors }}
+                    </div>
+
+                    <div class="col-12 col-md-8">
+                        <label for="{{ form.venue.id_for_label }}" class="form-label">
+                            {{ form.venue.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.venue }}
+                        <div class="form-text">
+                            Липсва подходяща зала?
+                            <a href="{% url 'events:venue_create' %}" target="_blank">Добавете нова локация</a>.
+                        </div>
+                        {{ form.venue.errors }}
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="{{ form.capacity.id_for_label }}" class="form-label">
+                            {{ form.capacity.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.capacity }}
+                        <div class="form-text">{{ form.capacity.help_text }}</div>
+                        {{ form.capacity.errors }}
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="{{ form.starts_at.id_for_label }}" class="form-label">
+                            {{ form.starts_at.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.starts_at }}
+                        {{ form.starts_at.errors }}
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="{{ form.ends_at.id_for_label }}" class="form-label">
+                            {{ form.ends_at.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.ends_at }}
+                        {{ form.ends_at.errors }}
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="{{ form.registration_deadline.id_for_label }}" class="form-label">
+                            {{ form.registration_deadline.label }}
+                        </label>
+                        {{ form.registration_deadline }}
+                        <div class="form-text">{{ form.registration_deadline.help_text }}</div>
+                        {{ form.registration_deadline.errors }}
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                        {{ form.status }}
+                        {{ form.status.errors }}
+                    </div>
+
+                    <div class="col-12 col-md-8">
+                        <label for="{{ form.cover_image.id_for_label }}" class="form-label">
+                            {{ form.cover_image.label }}
+                        </label>
+                        {{ form.cover_image }}
+                        {{ form.cover_image.errors }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# --- Билетни типове --- #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">Билетни типове и цени</h2>
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        data-add-form="tickets">+ Добави ред</button>
+            </div>
+            <div class="card-body">
+                {{ ticket_formset.management_form }}
+                {{ ticket_formset.non_form_errors }}
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                        <tr>
+                            <th style="min-width: 140px;">Наименование</th>
+                            <th style="min-width: 180px;">Описание</th>
+                            <th style="min-width: 100px;">Цена</th>
+                            <th style="min-width: 90px;">Квота</th>
+                            <th style="min-width: 80px;">Активен</th>
+                            <th style="min-width: 80px;">Изтрий</th>
+                        </tr>
+                        </thead>
+                        <tbody data-formset-body="tickets">
+                        {% for subform in ticket_formset %}
+                            <tr data-formset-row>
+                                {{ subform.id }}
+                                <td>{{ subform.name }}{{ subform.name.errors }}</td>
+                                <td>{{ subform.description }}</td>
+                                <td>{{ subform.price }}{{ subform.price.errors }}</td>
+                                <td>{{ subform.quota }}{{ subform.quota.errors }}</td>
+                                <td class="text-center">{{ subform.is_active }}</td>
+                                <td class="text-center">
+                                    {% if subform.instance.pk %}{{ subform.DELETE }}{% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="form-text mb-0">
+                    Сборът от квотите може да надхвърля броя места — водещо винаги е
+                    по-строгото от двете ограничения.
+                </p>
+            </div>
+        </div>
+
+        {# --- Програма --- #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">Програма</h2>
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        data-add-form="program">+ Добави ред</button>
+            </div>
+            <div class="card-body">
+                {{ program_formset.management_form }}
+                {{ program_formset.non_form_errors }}
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                        <tr>
+                            <th style="min-width: 160px;">Заглавие</th>
+                            <th style="min-width: 140px;">Лектор</th>
+                            <th style="min-width: 190px;">Начало</th>
+                            <th style="min-width: 190px;">Край</th>
+                            <th style="min-width: 80px;">Ред</th>
+                            <th style="min-width: 80px;">Изтрий</th>
+                        </tr>
+                        </thead>
+                        <tbody data-formset-body="program">
+                        {% for subform in program_formset %}
+                            <tr data-formset-row>
+                                {{ subform.id }}
+                                <td>{{ subform.title }}{{ subform.title.errors }}</td>
+                                <td>{{ subform.speaker }}</td>
+                                <td>{{ subform.starts_at }}{{ subform.starts_at.errors }}</td>
+                                <td>{{ subform.ends_at }}{{ subform.ends_at.errors }}</td>
+                                <td>{{ subform.order }}</td>
+                                <td class="text-center">
+                                    {% if subform.instance.pk %}{{ subform.DELETE }}{% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                {% if is_create %}Създай събитие{% else %}Запази промените{% endif %}
+            </button>
+            <a href="{% if is_create %}{% url 'events:event_manage_list' %}{% else %}{% url 'events:event_manage' slug=event.slug %}{% endif %}"
+               class="btn btn-outline-secondary">Отказ</a>
+        </div>
+    </form>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Добавяне на нов празен ред към набора от форми (билетни типове / програма).
+        // Клонира последния ред и увеличава брояча TOTAL_FORMS, който Django чете.
+        document.querySelectorAll('[data-add-form]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const prefix = button.dataset.addForm;
+                const body = document.querySelector('[data-formset-body="' + prefix + '"]');
+                const totalInput = document.querySelector('#id_' + prefix + '-TOTAL_FORMS');
+                const rows = body.querySelectorAll('[data-formset-row]');
+                const lastRow = rows[rows.length - 1];
+
+                const newIndex = parseInt(totalInput.value, 10);
+                const clone = lastRow.cloneNode(true);
+
+                clone.querySelectorAll('input, select, textarea').forEach(function (field) {
+                    if (field.name) {
+                        field.name = field.name.replace(/-\d+-/, '-' + newIndex + '-');
+                    }
+                    if (field.id) {
+                        field.id = field.id.replace(/-\d+-/, '-' + newIndex + '-');
+                    }
+                    if (field.type === 'checkbox') {
+                        field.checked = field.name.endsWith('is_active');
+                    } else if (field.name && field.name.endsWith('-id')) {
+                        field.value = '';
+                    } else {
+                        field.value = '';
+                    }
+                });
+
+                body.appendChild(clone);
+                totalInput.value = newIndex + 1;
+            });
+        });
+    </script>
+{% endblock %}

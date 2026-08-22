@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Моите събития{% endblock %}
+
+{% block content %}
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <h1 class="h3 mb-0">Управление на събития</h1>
+        <a href="{% url 'events:event_create' %}" class="btn btn-primary">+ Ново събитие</a>
+    </div>
+
+    <form method="get" class="mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label for="status" class="form-label">Статус</label>
+                <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">Всички</option>
+                    {% for value, label in statuses %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    {% if events %}
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Събитие</th>
+                        <th>Дата</th>
+                        <th>Локация</th>
+                        <th class="text-end">Продадени</th>
+                        <th class="text-end">Присъствали</th>
+                        <th>Статус</th>
+                        <th class="text-end">Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for event in events %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'events:event_manage' slug=event.slug %}"
+                                   class="fw-semibold text-decoration-none">{{ event.title }}</a>
+                            </td>
+                            <td class="text-nowrap">{{ event.starts_at|date:"d.m.Y H:i" }}</td>
+                            <td class="small text-muted">{{ event.venue.name }}, {{ event.venue.city }}</td>
+                            <td class="text-end">{{ event.sold }} / {{ event.capacity }}</td>
+                            <td class="text-end">{{ event.attended }}</td>
+                            <td>
+                                {% if event.status == 'PUBLISHED' %}
+                                    <span class="badge bg-success">Публикувано</span>
+                                {% elif event.status == 'DRAFT' %}
+                                    <span class="badge bg-secondary">Чернова</span>
+                                {% elif event.status == 'CANCELLED' %}
+                                    <span class="badge bg-danger">Отменено</span>
+                                {% else %}
+                                    <span class="badge bg-dark">Приключило</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a href="{% url 'events:event_edit' slug=event.slug %}"
+                                   class="btn btn-sm btn-outline-secondary">Редакция</a>
+                                <a href="{% url 'reports:event_report' slug=event.slug %}"
+                                   class="btn btn-sm btn-outline-secondary">Отчет</a>
+                                <a href="{% url 'checkin:scan_console' slug=event.slug %}"
+                                   class="btn btn-sm btn-outline-primary">Check-in</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Все още нямате създадени събития.
+            <a href="{% url 'events:event_create' %}">Създайте първото си събитие</a>.
+        </div>
+    {% endif %}
+{% endblock %}

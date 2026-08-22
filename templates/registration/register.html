@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация — {{ event.title }}{% endblock %}
+
+{% block content %}
+    <nav aria-label="Навигация">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'events:event_list' %}">Събития</a></li>
+            <li class="breadcrumb-item"><a href="{{ event.get_absolute_url }}">{{ event.title }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Регистрация</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-4">Регистрация за „{{ event.title }}“</h1>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-8">
+                {# --- Избор на билети --- #}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h2 class="h5 mb-0">Изберете билети</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Билетен тип</th>
+                                <th class="text-end">Цена</th>
+                                <th class="text-end">Наличност</th>
+                                <th style="width: 130px;" class="text-end">Брой</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for ticket_type, field in form.quantity_fields %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">{{ ticket_type.name }}</div>
+                                        {% if ticket_type.description %}
+                                            <div class="small text-muted">{{ ticket_type.description }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end" data-price="{{ ticket_type.price }}">
+                                        {% if ticket_type.is_free %}
+                                            <span class="text-success">Безплатен</span>
+                                        {% else %}
+                                            {{ ticket_type.price }} лв.
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        {% if ticket_type.remaining > 0 %}
+                                            <span class="text-success">{{ ticket_type.remaining }}</span>
+                                        {% else %}
+                                            <span class="text-danger">Изчерпан</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ field }}
+                                        {{ field.errors }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <p class="form-text mb-0">
+                            Може да заявите най-много <strong>{{ max_total }}</strong> билета в една заявка.
+                        </p>
+                    </div>
+                </div>
+
+                {# --- Данни за контакт --- #}
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h2 class="h5 mb-0">Данни за контакт</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.contact_name.id_for_label }}" class="form-label">
+                                    {{ form.contact_name.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.contact_name }}
+                                {{ form.contact_name.errors }}
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.contact_email.id_for_label }}" class="form-label">
+                                    {{ form.contact_email.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.contact_email }}
+                                <div class="form-text">На този адрес ще получите билетите с QR кодовете.</div>
+                                {{ form.contact_email.errors }}
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.contact_phone.id_for_label }}" class="form-label">
+                                    {{ form.contact_phone.label }}
+                                </label>
+                                {{ form.contact_phone }}
+                                {{ form.contact_phone.errors }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# --- Обобщение --- #}
+            <div class="col-12 col-lg-4">
+                <div class="card shadow-sm sticky-lg-top" style="top: 1rem;">
+                    <div class="card-header bg-white"><h2 class="h6 mb-0">Обобщение</h2></div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-3">
+                            🗓 {{ event.starts_at|date:"d.m.Y, H:i" }} ч.<br>
+                            📍 {{ event.venue.name }}, {{ event.venue.city }}
+                        </p>
+                        <hr>
+                        <div id="order-summary" class="small mb-3">
+                            <div class="text-muted">Още не сте избрали билети.</div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-semibold">Общо</span>
+                            <span class="h4 mb-0"><span id="order-total">0.00</span> лв.</span>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Продължи към плащане</button>
+                        </div>
+                        <p class="form-text text-center mt-2 mb-0">
+                            Плащането е симулирано — не се събират реални картови данни.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Пресмята обобщението на поръчката в движение, докато потребителят
+        // променя количествата. Крайната сума така или иначе се изчислява
+        // наново на сървъра — това тук е само за удобство на потребителя.
+        (function () {
+            const rows = Array.from(document.querySelectorAll('tbody tr'));
+            const summary = document.getElementById('order-summary');
+            const totalEl = document.getElementById('order-total');
+
+            function recalc() {
+                let total = 0;
+                const lines = [];
+
+                rows.forEach(function (row) {
+                    const input = row.querySelector('input[type="number"]');
+                    const priceCell = row.querySelector('[data-price]');
+                    if (!input || !priceCell) { return; }
+
+                    const qty = parseInt(input.value, 10) || 0;
+                    if (qty <= 0) { return; }
+
+                    const price = parseFloat(priceCell.dataset.price) || 0;
+                    const name = row.querySelector('.fw-semibold').textContent.trim();
+                    const lineTotal = qty * price;
+                    total += lineTotal;
+
+                    lines.push(
+                        '<div class="d-flex justify-content-between">' +
+                        '<span>' + qty + ' × ' + name + '</span>' +
+                        '<span>' + lineTotal.toFixed(2) + ' лв.</span>' +
+                        '</div>'
+                    );
+                });
+
+                summary.innerHTML = lines.length
+                    ? lines.join('')
+                    : '<div class="text-muted">Още не сте избрали билети.</div>';
+                totalEl.textContent = total.toFixed(2);
+            }
+
+            rows.forEach(function (row) {
+                const input = row.querySelector('input[type="number"]');
+                if (input) { input.addEventListener('input', recalc); }
+            });
+
+            recalc();
+        })();
+    </script>
+{% endblock %}

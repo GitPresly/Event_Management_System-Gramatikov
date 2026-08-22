@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Локации{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Локации</h1>
+        <a href="{% url 'events:venue_create' %}" class="btn btn-primary">+ Нова локация</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Наименование</th>
+                    <th>Град</th>
+                    <th>Адрес</th>
+                    <th class="text-end">Капацитет</th>
+                    <th class="text-end">Събития</th>
+                    <th class="text-end"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for venue in venues %}
+                    <tr>
+                        <td class="fw-semibold">{{ venue.name }}</td>
+                        <td>{{ venue.city }}</td>
+                        <td class="small text-muted">{{ venue.address }}</td>
+                        <td class="text-end">{{ venue.capacity }}</td>
+                        <td class="text-end">{{ venue.event_count }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'events:venue_edit' pk=venue.pk %}"
+                               class="btn btn-sm btn-outline-secondary">Редакция</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            Няма добавени локации.
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

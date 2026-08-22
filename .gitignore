@@ -1,0 +1,30 @@
+# Виртуална среда
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Django
+*.log
+db.sqlite3
+/staticfiles/
+
+# Качени и генерирани файлове (QR кодове, корици на събития)
+/media/
+
+# Локални настройки и тайни
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Windows
+Thumbs.db
+desktop.ini

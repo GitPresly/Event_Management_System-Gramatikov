@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Билет {{ ticket.short_code }}{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+
+            <div class="ticket-card shadow-sm p-4 text-center {% if ticket.is_checked_in %}is-used{% endif %}">
+                <p class="text-uppercase text-muted small mb-1">Билет за</p>
+                <h1 class="h4 mb-1">{{ ticket.event.title }}</h1>
+                <p class="text-muted mb-4">
+                    {{ ticket.event.starts_at|date:"d.m.Y, H:i" }} ч.<br>
+                    {{ ticket.event.venue.name }}, {{ ticket.event.venue.city }}
+                </p>
+
+                {% if ticket.status == 'VALID' or ticket.status == 'USED' %}
+                    <img src="{% url 'registration:ticket_qr' uuid=ticket.uuid %}"
+                         alt="QR код на билет {{ ticket.short_code }}" class="ticket-qr mb-3">
+                {% else %}
+                    <div class="border rounded p-5 mb-3 text-muted">
+                        <div style="font-size: 3rem;" aria-hidden="true">🔒</div>
+                        <p class="mb-0">
+                            {% if ticket.status == 'RESERVED' %}
+                                QR кодът се генерира след плащане на заявката.
+                            {% else %}
+                                Билетът е анулиран.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+
+                <div class="ticket-code mb-3">{{ ticket.short_code }}</div>
+
+                <div class="mb-3">
+                    {% if ticket.status == 'VALID' %}
+                        <span class="badge bg-success fs-6">Валиден за вход</span>
+                    {% elif ticket.status == 'USED' %}
+                        <span class="badge bg-primary fs-6">Използван</span>
+                        {% if checkin %}
+                            <div class="small text-muted mt-2">
+                                Влизане на {{ checkin.checked_in_at|date:"d.m.Y, H:i:s" }} ч.
+                            </div>
+                        {% endif %}
+                    {% elif ticket.status == 'RESERVED' %}
+                        <span class="badge bg-warning text-dark fs-6">Чака плащане</span>
+                    {% else %}
+                        <span class="badge bg-secondary fs-6">Анулиран</span>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <dl class="row small text-start mb-0">
+                    <dt class="col-5">Притежател</dt>
+                    <dd class="col-7">{{ ticket.holder_name }}</dd>
+                    <dt class="col-5">Билетен тип</dt>
+                    <dd class="col-7">{{ ticket.ticket_type.name }}</dd>
+                    <dt class="col-5">Цена</dt>
+                    <dd class="col-7">{{ ticket.price_paid }} лв.</dd>
+                    <dt class="col-5">Заявка</dt>
+                    <dd class="col-7">
+                        <a href="{{ ticket.registration.get_absolute_url }}" class="text-mono">
+                            {{ ticket.registration.code }}
+                        </a>
+                    </dd>
+                </dl>
+            </div>
+
+            {% if ticket.status == 'VALID' %}
+                <div class="alert alert-info small mt-3 no-print">
+                    Покажете този QR код на входа. Билетът може да бъде използван
+                    <strong>само веднъж</strong> — при повторно сканиране системата го отхвърля.
+                </div>
+            {% endif %}
+
+            <div class="d-flex gap-2 mt-3 no-print">
+                <a href="{% url 'registration:my_tickets' %}" class="btn btn-outline-secondary">
+                    Всички мои билети
+                </a>
+                <button type="button" class="btn btn-outline-primary" onclick="window.print();">
+                    Разпечатай
+                </button>
+            </div>
+        </div>
+    </div>
+{% endblock %}

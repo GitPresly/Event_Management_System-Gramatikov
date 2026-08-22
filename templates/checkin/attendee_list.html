@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Присъствали — {{ event.title }}{% endblock %}
+
+{% block content %}
+    <nav aria-label="Навигация">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'checkin:event_list' %}">Check-in</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <h1 class="h3 mb-0">Присъствали на „{{ event.title }}“</h1>
+        <div class="d-flex gap-2">
+            <a href="{% url 'checkin:scan_console' slug=event.slug %}" class="btn btn-primary">
+                Към конзолата
+            </a>
+            <a href="{% url 'reports:event_export' slug=event.slug %}" class="btn btn-outline-secondary">
+                Изтегли CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value text-success">{{ stats.checked_in }}</div>
+                <div class="stat-label">Влезли</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total_tickets }}</div>
+                <div class="stat-label">Издадени билети</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value text-warning">{{ stats.remaining }}</div>
+                <div class="stat-label">Още се очакват</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.percent }}%</div>
+                <div class="stat-label">Посещаемост</div>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-attendees"
+                    type="button" role="tab" aria-controls="tab-attendees" aria-selected="true">
+                Влезли участници ({{ checkins|length }})
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-log"
+                    type="button" role="tab" aria-controls="tab-log" aria-selected="false">
+                Дневник на сканиранията
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        {# --- Влезли участници --- #}
+        <div class="tab-pane fade show active" id="tab-attendees" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Час на влизане</th>
+                            <th>Код на билета</th>
+                            <th>Участник</th>
+                            <th>Билетен тип</th>
+                            <th>Заявка</th>
+                            <th>Проверил</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for checkin in checkins %}
+                            <tr>
+                                <td class="text-nowrap">{{ checkin.checked_in_at|date:"d.m.Y H:i:s" }}</td>
+                                <td class="text-mono">{{ checkin.ticket.short_code }}</td>
+                                <td>{{ checkin.ticket.holder_name }}</td>
+                                <td>{{ checkin.ticket.ticket_type.name }}</td>
+                                <td class="text-mono small">{{ checkin.ticket.registration.code }}</td>
+                                <td class="small text-muted">{{ checkin.operator.display_name }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    Още няма регистрирани влизания.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {# --- Одит на сканиранията --- #}
+        <div class="tab-pane fade" id="tab-log" role="tabpanel">
+            <form method="get" class="mb-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-auto">
+                        <label for="result" class="form-label">Резултат</label>
+                        <select name="result" id="result" class="form-select" onchange="this.form.submit()">
+                            <option value="">Всички</option>
+                            {% for value, label in results %}
+                                <option value="{{ value }}" {% if result_filter == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+
+            <div class="card shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Час</th>
+                            <th>Резултат</th>
+                            <th>Билет</th>
+                            <th>Оператор</th>
+                            <th>IP адрес</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for log in logs %}
+                            <tr>
+                                <td class="text-nowrap small">{{ log.created_at|date:"d.m.Y H:i:s" }}</td>
+                                <td>
+                                    {% if log.is_success %}
+                                        <span class="badge bg-success">{{ log.get_result_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ log.get_result_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-mono small">
+                                    {% if log.ticket %}{{ log.ticket.short_code }}{% else %}—{% endif %}
+                                </td>
+                                <td class="small">{{ log.operator.display_name }}</td>
+                                <td class="small text-muted">{{ log.ip_address|default:"—" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">Няма записи.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white small text-muted">
+                    Показват се последните 100 записа. Дневникът съдържа всеки опит за
+                    вход, включително отхвърлените — това е одитната следа на системата.
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

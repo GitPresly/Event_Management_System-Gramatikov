@@ -1,0 +1,33 @@
+{% comment %}
+Общ шаблон за извеждане на всички полета на форма с надписи, помощен текст и
+съобщения за грешка. Използва се от по-простите форми в системата.
+{% endcomment %}
+{% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+    </div>
+{% endif %}
+
+{% for field in form %}
+    <div class="mb-3">
+        {% if field.field.widget.input_type == 'checkbox' %}
+            <div class="form-check">
+                {{ field }}
+                <label for="{{ field.id_for_label }}" class="form-check-label">{{ field.label }}</label>
+            </div>
+        {% else %}
+            <label for="{{ field.id_for_label }}" class="form-label">
+                {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ field }}
+        {% endif %}
+
+        {% if field.help_text %}
+            <div class="form-text">{{ field.help_text }}</div>
+        {% endif %}
+
+        {% for error in field.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+        {% endfor %}
+    </div>
+{% endfor %}

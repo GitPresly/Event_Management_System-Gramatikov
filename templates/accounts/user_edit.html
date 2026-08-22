@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Редакция на {{ user_obj.username }}{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-7">
+            <nav aria-label="Навигация">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'accounts:user_list' %}">Потребители</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ user_obj.username }}</li>
+                </ol>
+            </nav>
+
+            <h1 class="h3 mb-4">Редакция на профил</h1>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% include "partials/form_fields.html" %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Запази</button>
+                            <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">Отказ</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "notifications/email/base_email.html" %}
+
+{% block subject %}Отказана регистрация — {{ event.title }}{% endblock %}
+{% block header_color %}#6c757d{% endblock %}
+{% block header %}Заявката Ви е отказана{% endblock %}
+
+{% block content %}
+    <p style="margin:0 0 16px; font-size:15px;">
+        Здравейте, <strong>{{ registration.contact_name }}</strong>!
+    </p>
+    <p style="margin:0 0 20px; font-size:15px;">
+        Заявка <strong>{{ registration.code }}</strong> за събитието
+        „<strong>{{ event.title }}</strong>“ е отказана. Всички билети по нея са
+        анулирани, а запазените места са освободени.
+    </p>
+
+    <p style="margin:20px 0; padding:12px 16px; background-color:#f8f9fa; border-left:4px solid #6c757d; font-size:14px;">
+        Ако плащането от <strong>{{ registration.total_amount }} лв.</strong> вече е било
+        извършено, сумата подлежи на възстановяване съгласно условията на организатора.
+    </p>
+
+    <p style="margin:24px 0 0;">
+        <a href="{{ events_url }}"
+           style="display:inline-block; padding:12px 24px; background-color:#0d6efd; color:#ffffff; text-decoration:none; border-radius:6px; font-size:15px;">
+            Разгледайте други събития
+        </a>
+    </p>
+{% endblock %}

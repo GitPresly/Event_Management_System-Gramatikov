@@ -1,0 +1,129 @@
+{% load static %}<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Система за управление на събития{% endblock %}</title>
+
+    {# Библиотеките са свалени локално, за да работи системата и без интернет. #}
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand fw-semibold" href="{% url 'events:event_list' %}">
+            <span aria-hidden="true">🎫</span> Събития
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false"
+                aria-label="Меню">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'events:event_list' %}">Всички събития</a>
+                </li>
+
+                {% if user.is_authenticated %}
+                    {% if user.can_manage_events %}
+                        {# Меню за организатор и администратор #}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'events:event_manage_list' %}">Моите събития</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'checkin:event_list' %}">Check-in</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'reports:overview' %}">Отчети</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'events:venue_list' %}">Локации</a>
+                        </li>
+                    {% else %}
+                        {# Меню за участник #}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'registration:my_registrations' %}">Моите заявки</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'registration:my_tickets' %}">Моите билети</a>
+                        </li>
+                    {% endif %}
+
+                    {% if user.is_admin_role %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:user_list' %}">Потребители</a>
+                        </li>
+                    {% endif %}
+                {% endif %}
+            </ul>
+
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            {{ user.display_name }}
+                            <span class="badge bg-secondary ms-1">{{ user.get_role_display }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'accounts:dashboard' %}">Табло</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Профил</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}">Смяна на парола</a></li>
+                            {% if user.is_staff %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'admin:index' %}">Административен панел</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'accounts:logout' %}" class="px-3 py-1">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">Изход</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:login' %}">Вход</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary btn-sm ms-lg-2 mt-2 mt-lg-0"
+                           href="{% url 'accounts:signup' %}">Регистрация</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container py-4 flex-grow-1">
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Затвори"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="bg-light border-top py-3 mt-auto">
+    <div class="container text-center text-muted small">
+        Система за управление на събития &middot; индивидуален практически проект
+        по разработка на софтуер
+    </div>
+</footer>
+
+<script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

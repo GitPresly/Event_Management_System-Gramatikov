@@ -1,0 +1,176 @@
+/* Допълнителни стилове върху Bootstrap. */
+
+:root {
+    --ems-radius: 10px;
+}
+
+body {
+    background-color: #f6f7f9;
+}
+
+/* --- Карти на събитията в каталога --- */
+
+.event-card {
+    transition: transform .12s ease, box-shadow .12s ease;
+    border-radius: var(--ems-radius);
+}
+
+.event-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08);
+}
+
+.event-card .card-img-top {
+    height: 170px;
+    object-fit: cover;
+}
+
+.event-card-placeholder {
+    height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    background: linear-gradient(135deg, #e9ecef, #dee2e6);
+    color: #adb5bd;
+}
+
+/* --- Показатели на таблото --- */
+
+.stat-card {
+    border-radius: var(--ems-radius);
+    border: 1px solid #dee2e6;
+    background: #fff;
+    padding: 1rem 1.25rem;
+    height: 100%;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.stat-card .stat-label {
+    font-size: .85rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+/* --- Билет с QR код --- */
+
+.ticket-qr {
+    max-width: 260px;
+    width: 100%;
+    height: auto;
+    background: #fff;
+    padding: 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.ticket-card {
+    border-radius: var(--ems-radius);
+    border: 1px solid #dee2e6;
+    background: #fff;
+}
+
+.ticket-card.is-used {
+    opacity: .7;
+}
+
+.ticket-code {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 1.35rem;
+    letter-spacing: .12em;
+    font-weight: 600;
+}
+
+/* --- Конзола за check-in --- */
+
+#qr-reader {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    border-radius: var(--ems-radius);
+    overflow: hidden;
+}
+
+.scan-result {
+    border-radius: var(--ems-radius);
+    padding: 1.25rem;
+    font-size: 1.05rem;
+    min-height: 96px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.scan-result.result-ok {
+    background-color: #d1e7dd;
+    border: 2px solid #198754;
+    color: #0a3622;
+}
+
+.scan-result.result-error {
+    background-color: #f8d7da;
+    border: 2px solid #dc3545;
+    color: #58151c;
+}
+
+.scan-result.result-idle {
+    background-color: #f8f9fa;
+    border: 2px dashed #adb5bd;
+    color: #6c757d;
+}
+
+.live-counter {
+    font-size: 3.25rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.live-counter-label {
+    font-size: .9rem;
+    color: #6c757d;
+}
+
+/* Кратко просветване при промяна на брояча — прави обновяването забележимо. */
+@keyframes counter-flash {
+    from { background-color: #fff3cd; }
+    to   { background-color: transparent; }
+}
+
+.counter-updated {
+    animation: counter-flash .6s ease-out;
+}
+
+/* --- Програма на събитието --- */
+
+.program-time {
+    font-family: Consolas, "Courier New", monospace;
+    white-space: nowrap;
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+/* --- Дребни помощни --- */
+
+.table-sticky thead th {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+}
+
+.text-mono {
+    font-family: Consolas, "Courier New", monospace;
+}
+
+@media print {
+    /* При печат на билет остава само самият билет. */
+    nav, footer, .no-print {
+        display: none !important;
+    }
+}

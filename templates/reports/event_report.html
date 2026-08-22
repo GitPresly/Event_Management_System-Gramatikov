@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Отчет — {{ event.title }}{% endblock %}
+
+{% block content %}
+    <nav aria-label="Навигация">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'reports:overview' %}">Отчети</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-2">
+        <div>
+            <h1 class="h3 mb-1">Отчет: {{ event.title }}</h1>
+            <p class="text-muted mb-0">
+                {{ event.starts_at|date:"d.m.Y, H:i" }} ч. &middot;
+                {{ event.venue.name }}, {{ event.venue.city }}
+            </p>
+        </div>
+        <a href="{% url 'reports:event_export' slug=event.slug %}" class="btn btn-outline-primary">
+            Изтегли CSV
+        </a>
+    </div>
+
+    {# --- Ключови показатели --- #}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value text-success">{{ revenue }}</div>
+                <div class="stat-label">Приходи (лв.)</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ issued }}</div>
+                <div class="stat-label">Продадени билети</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value text-primary">{{ attended }}</div>
+                <div class="stat-label">Присъствали</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ attendance_percent }}%</div>
+                <div class="stat-label">Посещаемост</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value text-warning">{{ no_show }}</div>
+                <div class="stat-label">Неявили се (no-show)</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ occupancy_percent }}%</div>
+                <div class="stat-label">Запълване от {{ capacity }} места</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ average_ticket_price }}</div>
+                <div class="stat-label">Среден билет (лв.)</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value text-secondary">{{ reserved }}</div>
+                <div class="stat-label">Неплатени резервации</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {# --- Приходи по билетен тип --- #}
+        <div class="col-12 col-lg-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Приходи и посещаемост по билетен тип</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Билетен тип</th>
+                            <th class="text-end">Цена</th>
+                            <th class="text-end">Продадени</th>
+                            <th class="text-end">Остават</th>
+                            <th class="text-end">Присъствали</th>
+                            <th class="text-end">Приходи</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in by_type %}
+                            <tr>
+                                <td>{{ row.name }}</td>
+                                <td class="text-end">{{ row.price }} лв.</td>
+                                <td class="text-end">{{ row.sold }} / {{ row.quota }}</td>
+                                <td class="text-end">{{ row.remaining_count }}</td>
+                                <td class="text-end">
+                                    {{ row.attended_count }}
+                                    <span class="small text-muted">({{ row.attendance_percent }}%)</span>
+                                </td>
+                                <td class="text-end fw-semibold">{{ row.revenue }} лв.</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-4">Няма данни.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                        <tr>
+                            <th colspan="2">Общо</th>
+                            <th class="text-end">{{ issued }}</th>
+                            <th></th>
+                            <th class="text-end">{{ attended }}</th>
+                            <th class="text-end">{{ revenue }} лв.</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            {# --- Разпределение на влизанията по час --- #}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Влизания по час</h2>
+                </div>
+                <div class="card-body">
+                    {% if hour_values %}
+                        <canvas id="chart-hours" height="140"></canvas>
+                    {% else %}
+                        <p class="text-muted text-center mb-0 py-4">
+                            Още няма регистрирани влизания за това събитие.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            {# --- Регистрации по статус --- #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white"><h2 class="h6 mb-0">Регистрации</h2></div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Общо заявки</span><strong>{{ registrations.total }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-success">Платени</span><strong>{{ registrations.paid }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-warning">Чакат плащане</span><strong>{{ registrations.pending }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-secondary">Отказани</span><strong>{{ registrations.cancelled }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between bg-light">
+                        <span>Постъпили плащания</span>
+                        <strong>{{ registrations.paid_amount }} лв.</strong>
+                    </li>
+                </ul>
+            </div>
+
+            {# --- Продажби по дни --- #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white"><h2 class="h6 mb-0">Приходи по дни</h2></div>
+                <div class="card-body">
+                    {% if day_values %}
+                        <canvas id="chart-days" height="180"></canvas>
+                    {% else %}
+                        <p class="text-muted text-center mb-0 py-3">Няма платени заявки.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# --- Одит на сканиранията --- #}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white"><h2 class="h6 mb-0">Резултати от сканиранията</h2></div>
+                <ul class="list-group list-group-flush">
+                    {% for row in scan_summary %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>{{ row.label }}</span><strong>{{ row.count }}</strong>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted text-center py-3">
+                            Още не са извършвани сканирания.
+                        </li>
+                    {% endfor %}
+                </ul>
+                <div class="card-footer bg-white small text-muted">
+                    Отхвърлените сканирания показват опити с вече използвани,
+                    неплатени или подправени билети.
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+    {{ hour_labels|json_script:"hour-labels" }}
+    {{ hour_values|json_script:"hour-values" }}
+    {{ day_labels|json_script:"day-labels" }}
+    {{ day_values|json_script:"day-values" }}
+    <script>
+        // Данните се подават през json_script — така стойностите не се вграждат
+        // пряко в JavaScript кода и се избягва рискът от XSS.
+        function readJson(id) {
+            const element = document.getElementById(id);
+            return element ? JSON.parse(element.textContent) : [];
+        }
+
+        const hoursCanvas = document.getElementById('chart-hours');
+        if (hoursCanvas) {
+            new Chart(hoursCanvas, {
+                type: 'bar',
+                data: {
+                    labels: readJson('hour-labels'),
+                    datasets: [{
+                        label: 'Влизания',
+                        data: readJson('hour-values'),
+                        backgroundColor: 'rgba(13, 110, 253, .65)',
+                        borderRadius: 4,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                },
+            });
+        }
+
+        const daysCanvas = document.getElementById('chart-days');
+        if (daysCanvas) {
+            new Chart(daysCanvas, {
+                type: 'line',
+                data: {
+                    labels: readJson('day-labels'),
+                    datasets: [{
+                        label: 'Приходи (лв.)',
+                        data: readJson('day-values'),
+                        borderColor: 'rgba(25, 135, 84, 1)',
+                        backgroundColor: 'rgba(25, 135, 84, .15)',
+                        fill: true,
+                        tension: .3,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } },
+                },
+            });
+        }
+    </script>
+{% endblock %}

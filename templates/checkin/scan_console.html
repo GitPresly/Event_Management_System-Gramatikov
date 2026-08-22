@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Check-in — {{ event.title }}{% endblock %}
+
+{% block content %}
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-2">
+        <div>
+            <h1 class="h3 mb-1">Check-in: {{ event.title }}</h1>
+            <p class="text-muted mb-0">
+                {{ event.starts_at|date:"d.m.Y, H:i" }} ч. &middot;
+                {{ event.venue.name }}, {{ event.venue.city }}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'checkin:attendee_list' slug=event.slug %}" class="btn btn-outline-secondary">
+                Списък с присъствали
+            </a>
+            <a href="{% url 'events:event_manage' slug=event.slug %}" class="btn btn-outline-secondary">
+                Управление
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {# --- Скенер --- #}
+        <div class="col-12 col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Сканиране на билет</h2>
+                    <button type="button" id="toggle-camera" class="btn btn-sm btn-outline-primary">
+                        Включи камерата
+                    </button>
+                </div>
+                <div class="card-body">
+                    {# Резултатът от последното сканиране #}
+                    <div id="scan-result" class="scan-result result-idle mb-3">
+                        <div class="fw-semibold" id="scan-result-title">Готово за сканиране</div>
+                        <div class="small" id="scan-result-detail">
+                            Включете камерата или въведете кода на билета ръчно.
+                        </div>
+                    </div>
+
+                    {# Област за камерата — попълва се от html5-qrcode #}
+                    <div id="qr-reader" class="mb-3 d-none"></div>
+                    <div id="camera-error" class="alert alert-warning small d-none"></div>
+
+                    <hr>
+
+                    {# Ръчно въвеждане — резервен вариант, ако няма камера #}
+                    <label for="manual-code" class="form-label">Ръчно въвеждане на код</label>
+                    <div class="input-group">
+                        <input type="text" id="manual-code" class="form-control text-mono"
+                               placeholder="напр. 3F7A2B10" autocomplete="off" maxlength="80">
+                        <button type="button" id="manual-submit" class="btn btn-primary">Провери</button>
+                    </div>
+                    <div class="form-text">
+                        Въведете 8-знаковия код, изписан под QR кода на билета.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# --- Жив брояч --- #}
+        <div class="col-12 col-lg-5">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Присъстващи в момента</h2>
+                </div>
+                <div class="card-body text-center">
+                    <div class="live-counter text-primary" id="counter-checked-in">{{ stats.checked_in }}</div>
+                    <div class="live-counter-label mb-3">
+                        от <span id="counter-total">{{ stats.total_tickets }}</span> издадени билета
+                    </div>
+
+                    <div class="progress mb-3" style="height: 10px;" role="progressbar"
+                         aria-label="Посещаемост" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar bg-success" id="counter-bar"
+                             style="width: {{ stats.percent }}%"></div>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="fw-semibold" id="counter-percent">{{ stats.percent }}%</div>
+                            <div class="small text-muted">посещаемост</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-semibold" id="counter-remaining">{{ stats.remaining }}</div>
+                            <div class="small text-muted">още се очакват</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-semibold">{{ stats.capacity }}</div>
+                            <div class="small text-muted">капацитет</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h2 class="h6 mb-0">Последни влизания</h2>
+                </div>
+                <ul class="list-group list-group-flush" id="recent-list">
+                    {% for entry in stats.recent %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <span class="text-mono">{{ entry.code }}</span>
+                                <span class="text-muted small d-block">{{ entry.holder }}</span>
+                            </span>
+                            <span class="badge bg-light text-dark">{{ entry.time }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-center text-muted py-4">
+                            Още няма регистрирани влизания.
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'vendor/html5-qrcode.min.js' %}"></script>
+    <script>
+        (function () {
+            const scanUrl = "{% url 'checkin:scan' slug=event.slug %}";
+            const statsUrl = "{% url 'checkin:live_stats' slug=event.slug %}";
+            const csrfToken = "{{ csrf_token }}";
+
+            const resultBox = document.getElementById('scan-result');
+            const resultTitle = document.getElementById('scan-result-title');
+            const resultDetail = document.getElementById('scan-result-detail');
+            const manualInput = document.getElementById('manual-code');
+
+            let lastPayload = '';
+            let lastScanTime = 0;
+            let busy = false;
+
+            // --- Изпращане на сканирания код към сървъра -------------------
+            function submitScan(payload) {
+                if (busy || !payload) { return; }
+
+                // Камерата разчита един и същ код много пъти в секунда —
+                // еднакви последователни четения в рамките на 3 секунди се пропускат.
+                const now = Date.now();
+                if (payload === lastPayload && now - lastScanTime < 3000) { return; }
+                lastPayload = payload;
+                lastScanTime = now;
+
+                busy = true;
+                fetch(scanUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({ payload: payload }),
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        showResult(data);
+                        if (data.stats) { updateStats(data.stats); }
+                    })
+                    .catch(function () {
+                        showResult({
+                            success: false,
+                            result_label: 'Грешка при връзката',
+                            message: 'Неуспешна връзка със сървъра. Опитайте отново.',
+                        });
+                    })
+                    .finally(function () { busy = false; });
+            }
+
+            // --- Показване на резултата ------------------------------------
+            function showResult(data) {
+                resultBox.classList.remove('result-idle', 'result-ok', 'result-error');
+                resultBox.classList.add(data.success ? 'result-ok' : 'result-error');
+
+                resultTitle.textContent = (data.success ? '✅ ' : '⛔ ') + (data.result_label || '');
+
+                let detail = data.message || '';
+                if (data.ticket) {
+                    detail += ' — ' + data.ticket.holder + ' (' + data.ticket.type +
+                        ', код ' + data.ticket.code + ')';
+                }
+                resultDetail.textContent = detail;
+            }
+
+            // --- Обновяване на брояча --------------------------------------
+            function updateStats(stats) {
+                const counter = document.getElementById('counter-checked-in');
+                const changed = counter.textContent !== String(stats.checked_in);
+
+                counter.textContent = stats.checked_in;
+                document.getElementById('counter-total').textContent = stats.total_tickets;
+                document.getElementById('counter-percent').textContent = stats.percent + '%';
+                document.getElementById('counter-remaining').textContent = stats.remaining;
+                document.getElementById('counter-bar').style.width = stats.percent + '%';
+
+                if (changed) {
+                    counter.classList.remove('counter-updated');
+                    void counter.offsetWidth;  // рестартира анимацията
+                    counter.classList.add('counter-updated');
+                }
+
+                const list = document.getElementById('recent-list');
+                if (stats.recent && stats.recent.length) {
+                    list.innerHTML = stats.recent.map(function (entry) {
+                        return '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+                            '<span><span class="text-mono">' + entry.code + '</span>' +
+                            '<span class="text-muted small d-block">' + entry.holder + '</span></span>' +
+                            '<span class="badge bg-light text-dark">' + entry.time + '</span></li>';
+                    }).join('');
+                }
+            }
+
+            // --- Периодично обновяване (проследяване в реално време) -------
+            // Анкетира сървъра на всеки 5 секунди, за да се вижда напредъкът и
+            // когато на входа работят няколко устройства едновременно.
+            setInterval(function () {
+                fetch(statsUrl)
+                    .then(function (response) { return response.json(); })
+                    .then(updateStats)
+                    .catch(function () { /* временна грешка в мрежата се игнорира */ });
+            }, 5000);
+
+            // --- Ръчно въвеждане -------------------------------------------
+            document.getElementById('manual-submit').addEventListener('click', function () {
+                const value = manualInput.value.trim();
+                if (value) {
+                    lastPayload = '';  // ръчното въвеждане никога не се пропуска
+                    submitScan(value);
+                    manualInput.value = '';
+                    manualInput.focus();
+                }
+            });
+
+            manualInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    document.getElementById('manual-submit').click();
+                }
+            });
+
+            // --- Камера -----------------------------------------------------
+            const toggleButton = document.getElementById('toggle-camera');
+            const readerBox = document.getElementById('qr-reader');
+            const cameraError = document.getElementById('camera-error');
+            let scanner = null;
+            let scanning = false;
+
+            toggleButton.addEventListener('click', function () {
+                if (scanning) {
+                    stopCamera();
+                } else {
+                    startCamera();
+                }
+            });
+
+            function startCamera() {
+                cameraError.classList.add('d-none');
+                readerBox.classList.remove('d-none');
+
+                if (!scanner) {
+                    scanner = new Html5Qrcode('qr-reader');
+                }
+
+                scanner.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: { width: 240, height: 240 } },
+                    function (decodedText) { submitScan(decodedText); },
+                    function () { /* кадър без разпознат код — нормално състояние */ }
+                ).then(function () {
+                    scanning = true;
+                    toggleButton.textContent = 'Изключи камерата';
+                }).catch(function (error) {
+                    readerBox.classList.add('d-none');
+                    cameraError.classList.remove('d-none');
+                    cameraError.textContent =
+                        'Камерата не може да бъде стартирана (' + error + '). ' +
+                        'Използвайте ръчното въвеждане на код.';
+                });
+            }
+
+            function stopCamera() {
+                if (!scanner) { return; }
+                scanner.stop().then(function () {
+                    scanning = false;
+                    readerBox.classList.add('d-none');
+                    toggleButton.textContent = 'Включи камерата';
+                });
+            }
+
+            manualInput.focus();
+        })();
+    </script>
+{% endblock %}

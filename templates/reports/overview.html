@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Отчети{% endblock %}
+
+{% block content %}
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h1 class="h3 mb-1">Обобщен отчет</h1>
+            <p class="text-muted mb-0">Приходи и посещаемост по събития.</p>
+        </div>
+        <a href="{% url 'reports:overview_export' %}?from={{ date_from }}&amp;to={{ date_to }}"
+           class="btn btn-outline-primary">Изтегли CSV</a>
+    </div>
+
+    <form method="get" class="card card-body mb-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-6 col-md-4">
+                <label for="from" class="form-label">Събития от дата</label>
+                <input type="date" name="from" id="from" class="form-control" value="{{ date_from }}">
+            </div>
+            <div class="col-6 col-md-4">
+                <label for="to" class="form-label">до дата</label>
+                <input type="date" name="to" id="to" class="form-control" value="{{ date_to }}">
+            </div>
+            <div class="col-12 col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary flex-grow-1">Приложи</button>
+                <a href="{% url 'reports:overview' %}" class="btn btn-outline-secondary">Изчисти</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value text-success">{{ revenue }}</div>
+                <div class="stat-label">Общо приходи (лв.)</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ event_count }}</div>
+                <div class="stat-label">Събития</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value text-primary">{{ issued }}</div>
+                <div class="stat-label">Продадени билети</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ attendance_percent }}%</div>
+                <div class="stat-label">Средна посещаемост</div>
+            </div>
+        </div>
+    </div>
+
+    {% if chart_labels %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h2 class="h5 mb-0">Приходи и присъствали по събития</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="chart-overview" height="120"></canvas>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white"><h2 class="h5 mb-0">Подробна разбивка</h2></div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Събитие</th>
+                    <th>Дата</th>
+                    <th>Локация</th>
+                    <th class="text-end">Продадени</th>
+                    <th class="text-end">Присъствали</th>
+                    <th class="text-end">Посещаемост</th>
+                    <th class="text-end">Приходи</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for event in events %}
+                    <tr>
+                        <td class="fw-semibold">{{ event.title }}</td>
+                        <td class="text-nowrap small">{{ event.starts_at|date:"d.m.Y" }}</td>
+                        <td class="small text-muted">{{ event.venue.city }}</td>
+                        <td class="text-end">{{ event.issued }} / {{ event.capacity }}</td>
+                        <td class="text-end">{{ event.attended }}</td>
+                        <td class="text-end">{{ event.attendance_percent }}%</td>
+                        <td class="text-end fw-semibold">{{ event.revenue }} лв.</td>
+                        <td class="text-end">
+                            <a href="{% url 'reports:event_report' slug=event.slug %}"
+                               class="btn btn-sm btn-outline-secondary">Отчет</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">Няма събития в избрания период.</td></tr>
+                {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                <tr>
+                    <th colspan="3">ОБЩО</th>
+                    <th class="text-end">{{ issued }}</th>
+                    <th class="text-end">{{ attended }}</th>
+                    <th class="text-end">{{ attendance_percent }}%</th>
+                    <th class="text-end">{{ revenue }} лв.</th>
+                    <th></th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+    {{ chart_labels|json_script:"chart-labels" }}
+    {{ chart_revenue|json_script:"chart-revenue" }}
+    {{ chart_attended|json_script:"chart-attended" }}
+    <script>
+        const overviewCanvas = document.getElementById('chart-overview');
+        if (overviewCanvas) {
+            new Chart(overviewCanvas, {
+                type: 'bar',
+                data: {
+                    labels: JSON.parse(document.getElementById('chart-labels').textContent),
+                    datasets: [
+                        {
+                            label: 'Приходи (лв.)',
+                            data: JSON.parse(document.getElementById('chart-revenue').textContent),
+                            backgroundColor: 'rgba(25, 135, 84, .7)',
+                            borderRadius: 4,
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: 'Присъствали',
+                            data: JSON.parse(document.getElementById('chart-attended').textContent),
+                            backgroundColor: 'rgba(13, 110, 253, .7)',
+                            borderRadius: 4,
+                            yAxisID: 'y1',
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: { display: true, text: 'Приходи (лв.)' },
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: { precision: 0 },
+                            title: { display: true, text: 'Присъствали' },
+                        },
+                    },
+                },
+            });
+        }
+    </script>
+{% endblock %}

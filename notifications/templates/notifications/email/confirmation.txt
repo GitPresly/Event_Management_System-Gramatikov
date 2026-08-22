@@ -1,0 +1,32 @@
+Здравейте, {{ registration.contact_name }}!
+
+Регистрацията Ви за събитието „{{ event.title }}“ е потвърдена.
+
+ДАННИ ЗА СЪБИТИЕТО
+------------------
+Събитие: {{ event.title }}
+Начало:  {{ event.starts_at|date:"d.m.Y, H:i" }} ч.
+Край:    {{ event.ends_at|date:"d.m.Y, H:i" }} ч.
+Локация: {{ event.venue.name }}, {{ event.venue.address }}, {{ event.venue.city }}
+
+ДАННИ ЗА ЗАЯВКАТА
+-----------------
+Код на заявката: {{ registration.code }}
+Платена сума:    {{ registration.total_amount }} лв.
+Брой билети:     {{ tickets|length }}
+
+ВАШИТЕ БИЛЕТИ
+-------------
+{% for ticket in tickets %}{{ forloop.counter }}. Код {{ ticket.short_code }} — {{ ticket.ticket_type.name }} ({{ ticket.price_paid }} лв.)
+{% endfor %}
+QR кодовете на билетите са прикачени към това писмо. Покажете ги на входа —
+всеки билет може да бъде използван само веднъж.
+
+Билетите Ви са достъпни и онлайн: {{ tickets_url }}
+Детайли за заявката: {{ registration_url }}
+
+Приятно прекарване!
+
+--
+Система за управление на събития
+Това писмо е генерирано автоматично. Моля, не отговаряйте на него.

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Заявка {{ registration.code }}{% endblock %}
+
+{% block content %}
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-2">
+        <div>
+            <h1 class="h3 mb-1">Заявка <span class="text-mono">{{ registration.code }}</span></h1>
+            <p class="text-muted mb-0">
+                <a href="{{ registration.event.get_absolute_url }}">{{ registration.event.title }}</a>
+                &middot; създадена на {{ registration.created_at|date:"d.m.Y, H:i" }}
+            </p>
+        </div>
+        <div>
+            {% if registration.status == 'PAID' %}
+                <span class="badge bg-success fs-6">Платена</span>
+            {% elif registration.status == 'PENDING' %}
+                <span class="badge bg-warning text-dark fs-6">Чака плащане</span>
+            {% else %}
+                <span class="badge bg-secondary fs-6">Отказана</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if registration.is_payable %}
+        <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span>Заявката още не е платена. Билетите се издават след плащане.</span>
+            <a href="{% url 'registration:payment' code=registration.code %}" class="btn btn-success">
+                Плати {{ registration.total_amount }} лв.
+            </a>
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white"><h2 class="h5 mb-0">Билети</h2></div>
+                <div class="list-group list-group-flush">
+                    {% for ticket in tickets %}
+                        <div class="list-group-item">
+                            <div class="row align-items-center g-3">
+                                <div class="col-auto">
+                                    {% if registration.status == 'PAID' and ticket.status != 'CANCELLED' %}
+                                        <img src="{% url 'registration:ticket_qr' uuid=ticket.uuid %}"
+                                             alt="QR код на билет {{ ticket.short_code }}"
+                                             class="ticket-qr" style="max-width: 120px;">
+                                    {% else %}
+                                        <div class="text-center text-muted p-4 border rounded"
+                                             style="width: 120px;">
+                                            <div style="font-size: 2rem;" aria-hidden="true">🔒</div>
+                                            <div class="small">Няма QR</div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col">
+                                    <div class="ticket-code">{{ ticket.short_code }}</div>
+                                    <div>{{ ticket.ticket_type.name }} &middot; {{ ticket.price_paid }} лв.</div>
+                                    <div class="small text-muted">{{ ticket.holder_name }}</div>
+                                    <div class="mt-2">
+                                        {% if ticket.status == 'VALID' %}
+                                            <span class="badge bg-success">Валиден</span>
+                                        {% elif ticket.status == 'USED' %}
+                                            <span class="badge bg-primary">Използван</span>
+                                        {% elif ticket.status == 'RESERVED' %}
+                                            <span class="badge bg-warning text-dark">Резервиран</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Анулиран</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <a href="{{ ticket.get_absolute_url }}" class="btn btn-sm btn-outline-primary">
+                                        Отвори билета
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white"><h2 class="h6 mb-0">Данни за заявката</h2></div>
+                <div class="card-body">
+                    <dl class="row small mb-0">
+                        <dt class="col-5">Име</dt>
+                        <dd class="col-7">{{ registration.contact_name }}</dd>
+                        <dt class="col-5">Имейл</dt>
+                        <dd class="col-7">{{ registration.contact_email }}</dd>
+                        {% if registration.contact_phone %}
+                            <dt class="col-5">Телефон</dt>
+                            <dd class="col-7">{{ registration.contact_phone }}</dd>
+                        {% endif %}
+                        <dt class="col-5">Брой билети</dt>
+                        <dd class="col-7">{{ registration.ticket_count }}</dd>
+                        <dt class="col-5">Обща сума</dt>
+                        <dd class="col-7 fw-semibold">{{ registration.total_amount }} лв.</dd>
+                    </dl>
+                </div>
+            </div>
+
+            {% if payment %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white"><h2 class="h6 mb-0">Плащане</h2></div>
+                    <div class="card-body">
+                        <dl class="row small mb-0">
+                            <dt class="col-5">Референция</dt>
+                            <dd class="col-7 text-mono">{{ payment.transaction_ref }}</dd>
+                            <dt class="col-5">Начин</dt>
+                            <dd class="col-7">{{ payment.get_method_display }}</dd>
+                            <dt class="col-5">Сума</dt>
+                            <dd class="col-7">{{ payment.amount }} лв.</dd>
+                            <dt class="col-5">Дата</dt>
+                            <dd class="col-7">{{ payment.created_at|date:"d.m.Y, H:i" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if registration.is_cancellable %}
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <form method="post" action="{% url 'registration:cancel' code=registration.code %}"
+                              onsubmit="return confirm('Наистина ли искате да откажете тази заявка? Билетите ще бъдат анулирани.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                Откажи заявката
+                            </button>
+                        </form>
+                        <p class="form-text mb-0 mt-2">
+                            Местата ще бъдат освободени и предоставени на други участници.
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

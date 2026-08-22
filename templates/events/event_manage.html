@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Управление — {{ event.title }}{% endblock %}
+
+{% block content %}
+    <nav aria-label="Навигация">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'events:event_manage_list' %}">Моите събития</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-2">
+        <div>
+            <h1 class="h3 mb-1">{{ event.title }}</h1>
+            <p class="text-muted mb-0">
+                {{ event.starts_at|date:"d.m.Y, H:i" }} ч. &middot;
+                {{ event.venue.name }}, {{ event.venue.city }}
+            </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ event.get_absolute_url }}" class="btn btn-outline-secondary">Публичен изглед</a>
+            <a href="{% url 'events:event_edit' slug=event.slug %}" class="btn btn-outline-primary">Редакция</a>
+        </div>
+    </div>
+
+    {# --- Показатели --- #}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ event.tickets_sold }}</div>
+                <div class="stat-label">Заети места от {{ event.capacity }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value text-success">{{ event.seats_available }}</div>
+                <div class="stat-label">Свободни места</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value text-primary">{{ event.checked_in_count }}</div>
+                <div class="stat-label">Присъствали</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ event.occupancy_percent }}%</div>
+                <div class="stat-label">Запълване</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            {# --- Билетни типове --- #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white"><h2 class="h5 mb-0">Билетни типове</h2></div>
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Наименование</th>
+                            <th class="text-end">Цена</th>
+                            <th class="text-end">Продадени</th>
+                            <th class="text-end">Квота</th>
+                            <th>Статус</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for ticket_type in ticket_types %}
+                            <tr>
+                                <td>
+                                    {{ ticket_type.name }}
+                                    {% if ticket_type.description %}
+                                        <div class="small text-muted">{{ ticket_type.description }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">{{ ticket_type.price }} лв.</td>
+                                <td class="text-end">{{ ticket_type.sold }}</td>
+                                <td class="text-end">{{ ticket_type.quota }}</td>
+                                <td>
+                                    {% if ticket_type.is_on_sale %}
+                                        <span class="badge bg-success">В продажба</span>
+                                    {% elif not ticket_type.is_active %}
+                                        <span class="badge bg-secondary">Неактивен</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Изчерпан / извън период</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    Няма добавени билетни типове.
+                                    <a href="{% url 'events:event_edit' slug=event.slug %}">Добавете поне един</a>,
+                                    за да можете да публикувате събитието.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# --- Програма --- #}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white"><h2 class="h5 mb-0">Програма</h2></div>
+                <ul class="list-group list-group-flush">
+                    {% for item in program_items %}
+                        <li class="list-group-item d-flex gap-3">
+                            <span class="program-time">
+                                {{ item.starts_at|date:"H:i" }}–{{ item.ends_at|date:"H:i" }}
+                            </span>
+                            <span>
+                                <strong>{{ item.title }}</strong>
+                                {% if item.speaker %}
+                                    <span class="text-muted"> — {{ item.speaker }}</span>
+                                {% endif %}
+                            </span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted text-center py-4">
+                            Програмата още не е попълнена.
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            {# --- Смяна на статуса --- #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white"><h2 class="h6 mb-0">Статус на събитието</h2></div>
+                <div class="card-body">
+                    <p class="mb-3">
+                        Текущ статус:
+                        {% if event.status == 'PUBLISHED' %}
+                            <span class="badge bg-success">Публикувано</span>
+                        {% elif event.status == 'DRAFT' %}
+                            <span class="badge bg-secondary">Чернова</span>
+                        {% elif event.status == 'CANCELLED' %}
+                            <span class="badge bg-danger">Отменено</span>
+                        {% else %}
+                            <span class="badge bg-dark">Приключило</span>
+                        {% endif %}
+                    </p>
+                    <form method="post" action="{% url 'events:event_change_status' slug=event.slug %}">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <select name="status" class="form-select" aria-label="Нов статус">
+                                {% for value, label in statuses %}
+                                    <option value="{{ value }}" {% if event.status == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-outline-primary">Промени</button>
+                        </div>
+                    </form>
+                    <p class="form-text mt-2 mb-0">
+                        Регистрации се приемат само за публикувани събития.
+                    </p>
+                </div>
+            </div>
+
+            {# --- Бързи връзки --- #}
+            <div class="card shadow-sm">
+                <div class="card-body d-grid gap-2">
+                    <a href="{% url 'checkin:scan_console' slug=event.slug %}" class="btn btn-primary">
+                        Отвори check-in конзолата
+                    </a>
+                    <a href="{% url 'checkin:attendee_list' slug=event.slug %}" class="btn btn-outline-secondary">
+                        Списък с присъствали
+                    </a>
+                    <a href="{% url 'reports:event_report' slug=event.slug %}" class="btn btn-outline-secondary">
+                        Отчет за посещаемост и приходи
+                    </a>
+                    <a href="{% url 'reports:event_export' slug=event.slug %}" class="btn btn-outline-secondary">
+                        Изтегли CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

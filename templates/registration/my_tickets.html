@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Моите билети{% endblock %}
+
+{% block content %}
+    <h1 class="h3 mb-4">Моите билети</h1>
+
+    {% if tickets %}
+        <div class="row g-4">
+            {% for ticket in tickets %}
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="ticket-card h-100 p-3 text-center shadow-sm {% if ticket.is_checked_in %}is-used{% endif %}">
+                        <p class="small text-muted mb-1">{{ ticket.event.starts_at|date:"d.m.Y, H:i" }} ч.</p>
+                        <h2 class="h6 mb-3">
+                            <a href="{{ ticket.get_absolute_url }}" class="text-decoration-none">
+                                {{ ticket.event.title }}
+                            </a>
+                        </h2>
+
+                        {% if ticket.status == 'VALID' or ticket.status == 'USED' %}
+                            <img src="{% url 'registration:ticket_qr' uuid=ticket.uuid %}"
+                                 alt="QR код на билет {{ ticket.short_code }}"
+                                 class="ticket-qr mb-2" style="max-width: 160px;">
+                        {% else %}
+                            <div class="border rounded p-4 mb-2 text-muted">
+                                <div style="font-size: 2.5rem;" aria-hidden="true">🔒</div>
+                                <div class="small">QR кодът се генерира след плащане</div>
+                            </div>
+                        {% endif %}
+
+                        <div class="ticket-code">{{ ticket.short_code }}</div>
+                        <div class="small text-muted mb-2">{{ ticket.ticket_type.name }}</div>
+
+                        {% if ticket.status == 'VALID' %}
+                            <span class="badge bg-success">Валиден</span>
+                        {% elif ticket.status == 'USED' %}
+                            <span class="badge bg-primary">Използван</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Чака плащане</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Още нямате билети. <a href="{% url 'events:event_list' %}">Разгледайте събитията</a>.
+        </div>
+    {% endif %}
+{% endblock %}

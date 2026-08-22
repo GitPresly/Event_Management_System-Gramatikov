@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Страницата не е намерена{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-7 text-center py-5">
+            <div style="font-size: 4rem;" aria-hidden="true">🔍</div>
+            <h1 class="h3 mt-3">Страницата не е намерена</h1>
+            <p class="text-muted">Търсеният адрес не съществува или обектът е премахнат.</p>
+            <a href="{% url 'events:event_list' %}" class="btn btn-primary mt-2">Към началната страница</a>
+        </div>
+    </div>
+{% endblock %}

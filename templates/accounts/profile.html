@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Моят профил{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-7">
+            <h1 class="h3 mb-4">Моят профил</h1>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Потребителско име</dt>
+                        <dd class="col-sm-8">{{ user.username }}</dd>
+                        <dt class="col-sm-4">Роля</dt>
+                        <dd class="col-sm-8"><span class="badge bg-secondary">{{ user.get_role_display }}</span></dd>
+                        <dt class="col-sm-4">Регистриран на</dt>
+                        <dd class="col-sm-8">{{ user.date_joined|date:"d.m.Y" }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white"><h2 class="h5 mb-0">Редакция на данните</h2></div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% include "partials/form_fields.html" %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Запази</button>
+                            <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-secondary">
+                                Смяна на парола
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

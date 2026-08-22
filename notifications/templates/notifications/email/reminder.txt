@@ -1,0 +1,22 @@
+Здравейте, {{ registration.contact_name }}!
+
+Напомняме Ви, че събитието „{{ event.title }}“ започва след около {{ hours_left }} часа.
+
+КОГА И КЪДЕ
+-----------
+Начало:  {{ event.starts_at|date:"d.m.Y, H:i" }} ч.
+Локация: {{ event.venue.name }}, {{ event.venue.address }}, {{ event.venue.city }}
+
+ВАШИТЕ БИЛЕТИ
+-------------
+Код на заявката: {{ registration.code }}
+{% for ticket in tickets %}{{ forloop.counter }}. Код {{ ticket.short_code }} — {{ ticket.ticket_type.name }}
+{% endfor %}
+Не забравяйте да носите QR кода на билета си — можете да го отворите тук:
+{{ tickets_url }}
+
+Очакваме Ви!
+
+--
+Система за управление на събития
+Това писмо е генерирано автоматично. Моля, не отговаряйте на него.

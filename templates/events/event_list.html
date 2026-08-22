@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Събития{% endblock %}
+
+{% block content %}
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h1 class="h3 mb-1">Събития</h1>
+            <p class="text-muted mb-0">Разгледайте предстоящите събития и запазете билет.</p>
+        </div>
+        {% if user.is_authenticated and user.can_manage_events %}
+            <a href="{% url 'events:event_create' %}" class="btn btn-primary">
+                + Ново събитие
+            </a>
+        {% endif %}
+    </div>
+
+    {# Филтър по текст, град и период #}
+    <form method="get" class="card card-body mb-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-5">
+                <label for="{{ filter_form.q.id_for_label }}" class="form-label">Търсене</label>
+                {{ filter_form.q }}
+            </div>
+            <div class="col-6 col-md-3">
+                <label for="{{ filter_form.city.id_for_label }}" class="form-label">Град</label>
+                {{ filter_form.city }}
+            </div>
+            <div class="col-6 col-md-2">
+                <label for="{{ filter_form.period.id_for_label }}" class="form-label">Период</label>
+                {{ filter_form.period }}
+            </div>
+            <div class="col-12 col-md-2 d-grid">
+                <button type="submit" class="btn btn-outline-primary">Филтрирай</button>
+            </div>
+        </div>
+    </form>
+
+    {% if events %}
+        <div class="row g-4">
+            {% for event in events %}
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card event-card h-100 shadow-sm">
+                        {% if event.cover_image %}
+                            <img src="{{ event.cover_image.url }}" class="card-img-top" alt="{{ event.title }}">
+                        {% else %}
+                            <div class="event-card-placeholder card-img-top" aria-hidden="true">🎪</div>
+                        {% endif %}
+
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-primary-subtle text-primary-emphasis">
+                                    {{ event.starts_at|date:"d.m.Y" }}
+                                </span>
+                                {% if event.status == 'DRAFT' %}
+                                    <span class="badge bg-secondary">Чернова</span>
+                                {% elif event.status == 'CANCELLED' %}
+                                    <span class="badge bg-danger">Отменено</span>
+                                {% elif event.is_past %}
+                                    <span class="badge bg-dark">Приключило</span>
+                                {% elif event.is_sold_out %}
+                                    <span class="badge bg-warning text-dark">Изчерпано</span>
+                                {% endif %}
+                            </div>
+
+                            <h2 class="h5 card-title">
+                                <a href="{{ event.get_absolute_url }}" class="text-decoration-none stretched-link">
+                                    {{ event.title }}
+                                </a>
+                            </h2>
+
+                            <p class="text-muted small mb-2">
+                                📍 {{ event.venue.name }}, {{ event.venue.city }}<br>
+                                🕒 {{ event.starts_at|date:"H:i" }} ч.
+                            </p>
+
+                            <p class="card-text small text-secondary flex-grow-1">
+                                {{ event.description|truncatewords:18 }}
+                            </p>
+
+                            <div class="mt-auto pt-2 border-top">
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>{{ event.sold }} / {{ event.capacity }} заети места</span>
+                                    {% if event.sold >= event.capacity %}
+                                        <span class="text-danger fw-semibold">Няма места</span>
+                                    {% else %}
+                                        <span class="text-success">{{ event.seats_available }} свободни</span>
+                                    {% endif %}
+                                </div>
+                                <div class="progress mt-1" style="height: 5px;" role="progressbar"
+                                     aria-label="Запълване" aria-valuenow="{{ event.occupancy_percent }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar" style="width: {{ event.occupancy_percent }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Няма намерени събития по зададените критерии.
+        </div>
+    {% endif %}
+{% endblock %}
