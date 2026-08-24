@@ -26,7 +26,7 @@
         <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
             <span>Заявката още не е платена. Билетите се издават след плащане.</span>
             <a href="{% url 'registration:payment' code=registration.code %}" class="btn btn-success">
-                Плати {{ registration.total_amount }} лв.
+                Плати {{ registration.total_amount }} €
             </a>
         </div>
     {% endif %}
@@ -54,7 +54,7 @@
                                 </div>
                                 <div class="col">
                                     <div class="ticket-code">{{ ticket.short_code }}</div>
-                                    <div>{{ ticket.ticket_type.name }} &middot; {{ ticket.price_paid }} лв.</div>
+                                    <div>{{ ticket.ticket_type.name }} &middot; {{ ticket.price_paid }} €</div>
                                     <div class="small text-muted">{{ ticket.holder_name }}</div>
                                     <div class="mt-2">
                                         {% if ticket.status == 'VALID' %}
@@ -96,7 +96,7 @@
                         <dt class="col-5">Брой билети</dt>
                         <dd class="col-7">{{ registration.ticket_count }}</dd>
                         <dt class="col-5">Обща сума</dt>
-                        <dd class="col-7 fw-semibold">{{ registration.total_amount }} лв.</dd>
+                        <dd class="col-7 fw-semibold">{{ registration.total_amount }} €</dd>
                     </dl>
                 </div>
             </div>
@@ -111,7 +111,7 @@
                             <dt class="col-5">Начин</dt>
                             <dd class="col-7">{{ payment.get_method_display }}</dd>
                             <dt class="col-5">Сума</dt>
-                            <dd class="col-7">{{ payment.amount }} лв.</dd>
+                            <dd class="col-7">{{ payment.amount }} €</dd>
                             <dt class="col-5">Дата</dt>
                             <dd class="col-7">{{ payment.created_at|date:"d.m.Y, H:i" }}</dd>
                         </dl>

@@ -117,7 +117,7 @@
                             <th style="min-width: 100px;">Цена</th>
                             <th style="min-width: 90px;">Квота</th>
                             <th style="min-width: 80px;">Активен</th>
-                            <th style="min-width: 80px;">Изтрий</th>
+                            <th style="min-width: 90px;">Премахни</th>
                         </tr>
                         </thead>
                         <tbody data-formset-body="tickets">
@@ -130,7 +130,11 @@
                                 <td>{{ subform.quota }}{{ subform.quota.errors }}</td>
                                 <td class="text-center">{{ subform.is_active }}</td>
                                 <td class="text-center">
-                                    {% if subform.instance.pk %}{{ subform.DELETE }}{% endif %}
+                                    {# Отметката DELETE се управлява от бутона до нея. #}
+                                    <span class="d-none">{{ subform.DELETE }}</span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-remove-row title="Премахни реда"
+                                            aria-label="Премахни реда">&times;</button>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -163,7 +167,7 @@
                             <th style="min-width: 190px;">Начало</th>
                             <th style="min-width: 190px;">Край</th>
                             <th style="min-width: 80px;">Ред</th>
-                            <th style="min-width: 80px;">Изтрий</th>
+                            <th style="min-width: 90px;">Премахни</th>
                         </tr>
                         </thead>
                         <tbody data-formset-body="program">
@@ -176,7 +180,10 @@
                                 <td>{{ subform.ends_at }}{{ subform.ends_at.errors }}</td>
                                 <td>{{ subform.order }}</td>
                                 <td class="text-center">
-                                    {% if subform.instance.pk %}{{ subform.DELETE }}{% endif %}
+                                    <span class="d-none">{{ subform.DELETE }}</span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-remove-row title="Премахни реда"
+                                            aria-label="Премахни реда">&times;</button>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -198,7 +205,7 @@
 
 {% block extra_js %}
     <script>
-        // Добавяне на нов празен ред към набора от форми (билетни типове / програма).
+        // --- Добавяне на нов ред -------------------------------------------
         // Клонира последния ред и увеличава брояча TOTAL_FORMS, който Django чете.
         document.querySelectorAll('[data-add-form]').forEach(function (button) {
             button.addEventListener('click', function () {
@@ -211,6 +218,9 @@
                 const newIndex = parseInt(totalInput.value, 10);
                 const clone = lastRow.cloneNode(true);
 
+                // Новият ред винаги е видим и незасегнат от предишно премахване.
+                clone.classList.remove('d-none');
+
                 clone.querySelectorAll('input, select, textarea').forEach(function (field) {
                     if (field.name) {
                         field.name = field.name.replace(/-\d+-/, '-' + newIndex + '-');
@@ -219,9 +229,8 @@
                         field.id = field.id.replace(/-\d+-/, '-' + newIndex + '-');
                     }
                     if (field.type === 'checkbox') {
+                        // „Активен“ е отметнато по подразбиране, DELETE — не.
                         field.checked = field.name.endsWith('is_active');
-                    } else if (field.name && field.name.endsWith('-id')) {
-                        field.value = '';
                     } else {
                         field.value = '';
                     }
@@ -230,6 +239,66 @@
                 body.appendChild(clone);
                 totalInput.value = newIndex + 1;
             });
+        });
+
+        // --- Премахване на ред ----------------------------------------------
+        // Редът не се изтрива от страницата, а се отмята за изтриване и се скрива.
+        // Така Django получава непрекъсната номерация на формите (TOTAL_FORMS
+        // остава непроменен) и сам пропуска отметнатите редове — както вече
+        // записаните в базата, така и новодобавените.
+        document.addEventListener('click', function (event) {
+            const button = event.target.closest('[data-remove-row]');
+            if (!button) { return; }
+
+            const row = button.closest('[data-formset-row]');
+            const body = row.closest('[data-formset-body]');
+
+            // Поне един видим ред трябва да остане.
+            const visible = body.querySelectorAll('[data-formset-row]:not(.d-none)');
+            if (visible.length <= 1) {
+                clearRow(row);
+                return;
+            }
+
+            const deleteBox = row.querySelector('input[name$="-DELETE"]');
+            if (deleteBox) { deleteBox.checked = true; }
+
+            // Скритите полета не бива да остават задължителни — иначе браузърът
+            // отказва да изпрати формата заради поле, което не може да покаже.
+            row.querySelectorAll('[required]').forEach(function (field) {
+                field.removeAttribute('required');
+            });
+
+            row.classList.add('d-none');
+        });
+
+        function clearRow(row) {
+            // Последният ред само се изчиства, вместо да се скрива.
+            row.querySelectorAll('input, select, textarea').forEach(function (field) {
+                if (field.name && field.name.endsWith('-DELETE')) { return; }
+                if (field.type === 'checkbox') {
+                    field.checked = field.name.endsWith('is_active');
+                } else if (!field.name || !field.name.endsWith('-id')) {
+                    field.value = '';
+                }
+            });
+        }
+
+        // --- Забрана на отрицателна цена ------------------------------------
+        // Формата се изпраща с novalidate, за да се показват съобщенията на
+        // български от сървъра, затова браузърът не проверява сам атрибута min.
+        // Тази проверка връща стойността на 0 веднага при въвеждане; истинската
+        // защита е в clean_price на сървъра и в ограничението на базата данни.
+        document.addEventListener('input', function (event) {
+            const field = event.target;
+            if (!field.name) { return; }
+            if (!/-(price|quota|order|capacity)$/.test(field.name) && field.name !== 'capacity') {
+                return;
+            }
+            const min = field.name.endsWith('-quota') ? 1 : 0;
+            if (field.value !== '' && parseFloat(field.value) < min) {
+                field.value = min;
+            }
         });
     </script>
 {% endblock %}

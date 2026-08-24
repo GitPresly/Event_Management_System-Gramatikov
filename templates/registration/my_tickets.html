@@ -29,15 +29,31 @@
                         {% endif %}
 
                         <div class="ticket-code">{{ ticket.short_code }}</div>
-                        <div class="small text-muted mb-2">{{ ticket.ticket_type.name }}</div>
+                        <div class="small text-muted mb-1">
+                            {{ ticket.ticket_type.name }} &middot;
+                            {% if ticket.price_paid %}{{ ticket.price_paid }} €{% else %}безплатен{% endif %}
+                        </div>
 
-                        {% if ticket.status == 'VALID' %}
-                            <span class="badge bg-success">Валиден</span>
-                        {% elif ticket.status == 'USED' %}
-                            <span class="badge bg-primary">Използван</span>
-                        {% else %}
-                            <span class="badge bg-warning text-dark">Чака плащане</span>
-                        {% endif %}
+                        <div class="mb-2">
+                            {% if ticket.status == 'VALID' %}
+                                <span class="badge bg-success">Валиден</span>
+                            {% elif ticket.status == 'USED' %}
+                                <span class="badge bg-primary">Използван</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Чака плащане</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="{{ ticket.get_absolute_url }}" class="btn btn-sm btn-outline-secondary">
+                                Подробности
+                            </a>
+                            {% if ticket.status == 'VALID' or ticket.status == 'USED' %}
+                                <a href="{% url 'registration:ticket_qr' uuid=ticket.uuid %}?download=1"
+                                   class="btn btn-sm btn-outline-primary"
+                                   download="bilet-{{ ticket.short_code }}.png">⬇ QR</a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             {% endfor %}

@@ -97,7 +97,7 @@ class Registration(models.Model):
     contact_phone = models.CharField("Телефон", max_length=20, blank=True)
 
     total_amount = models.DecimalField(
-        "Обща сума (лв.)", max_digits=10, decimal_places=2, default=Decimal("0.00")
+        "Обща сума (€)", max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
 
     created_at = models.DateTimeField("Създадена на", auto_now_add=True, db_index=True)
@@ -176,7 +176,7 @@ class Ticket(models.Model):
     # Цената се записва в момента на покупката — по-късна промяна на цената
     # на билетния тип не бива да променя вече издадени билети.
     price_paid = models.DecimalField(
-        "Платена цена (лв.)", max_digits=8, decimal_places=2, default=Decimal("0.00")
+        "Платена цена (€)", max_digits=8, decimal_places=2, default=Decimal("0.00")
     )
 
     status = models.CharField(
@@ -234,7 +234,7 @@ class Payment(models.Model):
     registration = models.OneToOneField(
         Registration, verbose_name="Заявка", on_delete=models.CASCADE, related_name="payment"
     )
-    amount = models.DecimalField("Сума (лв.)", max_digits=10, decimal_places=2)
+    amount = models.DecimalField("Сума (€)", max_digits=10, decimal_places=2)
     method = models.CharField(
         "Начин на плащане", max_length=20, choices=PaymentMethod.choices
     )
@@ -252,7 +252,7 @@ class Payment(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"{self.transaction_ref} — {self.amount} лв."
+        return f"{self.transaction_ref} — {self.amount} €"
 
     @staticmethod
     def generate_reference() -> str:

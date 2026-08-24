@@ -194,7 +194,7 @@ def reserve_tickets(user, event, requests: list[TicketRequest], contact=None) ->
     registration.save(update_fields=["total_amount"])
 
     logger.info(
-        "Създадена регистрация %s за събитие %s: %s билета, %s лв.",
+        "Създадена регистрация %s за събитие %s: %s билета, %s €",
         registration.code,
         locked_event.pk,
         total_quantity,
@@ -241,7 +241,7 @@ def simulate_payment(registration: Registration, method: str = PaymentMethod.CAR
         attach_qr_to_ticket(ticket)
 
     logger.info(
-        "Платена заявка %s (%s лв., %s), издадени %s билета",
+        "Платена заявка %s (%s €, %s), издадени %s билета",
         locked.code,
         locked.total_amount,
         method,

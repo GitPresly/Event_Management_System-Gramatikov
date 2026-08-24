@@ -41,12 +41,12 @@
             <tr>
                 <td style="border-bottom:1px solid #f1f3f5;"><code>{{ ticket.short_code }}</code></td>
                 <td style="border-bottom:1px solid #f1f3f5;">{{ ticket.ticket_type.name }}</td>
-                <td align="right" style="border-bottom:1px solid #f1f3f5;">{{ ticket.price_paid }} лв.</td>
+                <td align="right" style="border-bottom:1px solid #f1f3f5;">{{ ticket.price_paid }} €</td>
             </tr>
         {% endfor %}
         <tr style="background-color:#f8f9fa;">
             <td colspan="2"><strong>Общо</strong></td>
-            <td align="right"><strong>{{ registration.total_amount }} лв.</strong></td>
+            <td align="right"><strong>{{ registration.total_amount }} €</strong></td>
         </tr>
     </table>
 

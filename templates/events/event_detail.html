@@ -145,7 +145,7 @@
                                             {% if ticket_type.is_free %}
                                                 Безплатен
                                             {% else %}
-                                                {{ ticket_type.price }} лв.
+                                                {{ ticket_type.price }} €
                                             {% endif %}
                                         </span>
                                     </div>
@@ -170,7 +170,7 @@
                                     </a>
                                     <div class="small text-muted">
                                         {{ registration.ticket_count }} билет(а) &middot;
-                                        {{ registration.total_amount }} лв.
+                                        {{ registration.total_amount }} €
                                     </div>
                                 </div>
                                 {% if registration.status == 'PAID' %}

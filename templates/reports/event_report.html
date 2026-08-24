@@ -29,7 +29,7 @@
         <div class="col-6 col-lg-3">
             <div class="stat-card">
                 <div class="stat-value text-success">{{ revenue }}</div>
-                <div class="stat-label">Приходи (лв.)</div>
+                <div class="stat-label">Приходи (€)</div>
             </div>
         </div>
         <div class="col-6 col-lg-3">
@@ -68,7 +68,7 @@
         <div class="col-6 col-lg-3">
             <div class="stat-card">
                 <div class="stat-value">{{ average_ticket_price }}</div>
-                <div class="stat-label">Среден билет (лв.)</div>
+                <div class="stat-label">Среден билет (€)</div>
             </div>
         </div>
         <div class="col-6 col-lg-3">
@@ -102,14 +102,14 @@
                         {% for row in by_type %}
                             <tr>
                                 <td>{{ row.name }}</td>
-                                <td class="text-end">{{ row.price }} лв.</td>
+                                <td class="text-end">{{ row.price }} €</td>
                                 <td class="text-end">{{ row.sold }} / {{ row.quota }}</td>
                                 <td class="text-end">{{ row.remaining_count }}</td>
                                 <td class="text-end">
                                     {{ row.attended_count }}
                                     <span class="small text-muted">({{ row.attendance_percent }}%)</span>
                                 </td>
-                                <td class="text-end fw-semibold">{{ row.revenue }} лв.</td>
+                                <td class="text-end fw-semibold">{{ row.revenue }} €</td>
                             </tr>
                         {% empty %}
                             <tr><td colspan="6" class="text-center text-muted py-4">Няма данни.</td></tr>
@@ -121,7 +121,7 @@
                             <th class="text-end">{{ issued }}</th>
                             <th></th>
                             <th class="text-end">{{ attended }}</th>
-                            <th class="text-end">{{ revenue }} лв.</th>
+                            <th class="text-end">{{ revenue }} €</th>
                         </tr>
                         </tfoot>
                     </table>
@@ -164,7 +164,7 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between bg-light">
                         <span>Постъпили плащания</span>
-                        <strong>{{ registrations.paid_amount }} лв.</strong>
+                        <strong>{{ registrations.paid_amount }} €</strong>
                     </li>
                 </ul>
             </div>
@@ -246,7 +246,7 @@
                 data: {
                     labels: readJson('day-labels'),
                     datasets: [{
-                        label: 'Приходи (лв.)',
+                        label: 'Приходи (€)',
                         data: readJson('day-values'),
                         borderColor: 'rgba(25, 135, 84, 1)',
                         backgroundColor: 'rgba(25, 135, 84, .15)',

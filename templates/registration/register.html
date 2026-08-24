@@ -52,7 +52,7 @@
                                         {% if ticket_type.is_free %}
                                             <span class="text-success">Безплатен</span>
                                         {% else %}
-                                            {{ ticket_type.price }} лв.
+                                            {{ ticket_type.price }} €
                                         {% endif %}
                                     </td>
                                     <td class="text-end">
@@ -127,7 +127,7 @@
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="fw-semibold">Общо</span>
-                            <span class="h4 mb-0"><span id="order-total">0.00</span> лв.</span>
+                            <span class="h4 mb-0"><span id="order-total">0.00</span> €</span>
                         </div>
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg">Продължи към плащане</button>
@@ -172,7 +172,7 @@
                     lines.push(
                         '<div class="d-flex justify-content-between">' +
                         '<span>' + qty + ' × ' + name + '</span>' +
-                        '<span>' + lineTotal.toFixed(2) + ' лв.</span>' +
+                        '<span>' + lineTotal.toFixed(2) + ' €</span>' +
                         '</div>'
                     );
                 });

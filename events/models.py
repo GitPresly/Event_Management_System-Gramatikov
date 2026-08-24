@@ -328,7 +328,7 @@ class TicketType(models.Model):
     name = models.CharField("Наименование", max_length=100)
     description = models.CharField("Описание", max_length=255, blank=True)
     price = models.DecimalField(
-        "Цена (лв.)",
+        "Цена (€)",
         max_digits=8,
         decimal_places=2,
         default=Decimal("0.00"),
@@ -360,7 +360,7 @@ class TicketType(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.name} — {self.price} лв."
+        return f"{self.name} — {self.price} €"
 
     def clean(self):
         if self.sales_start and self.sales_end and self.sales_end <= self.sales_start:

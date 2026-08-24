@@ -46,7 +46,7 @@
                             </td>
                             <td class="text-nowrap">{{ registration.event.starts_at|date:"d.m.Y H:i" }}</td>
                             <td class="text-end">{{ registration.ticket_count }}</td>
-                            <td class="text-end">{{ registration.total_amount }} лв.</td>
+                            <td class="text-end">{{ registration.total_amount }} €</td>
                             <td>
                                 {% if registration.status == 'PAID' %}
                                     <span class="badge bg-success">Платена</span>

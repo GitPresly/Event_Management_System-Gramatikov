@@ -229,10 +229,15 @@ def ticket_qr(request, uuid):
     """
     Отдава QR изображението на билета.
 
+    С параметър ?download=1 файлът се предлага за изтегляне вместо да се показва
+    в страницата — това обслужва бутона „Изтегли QR кода“.
+
     Ако файлът още не е генериран (напр. билетът е само резервиран), кодът се
     изчертава в движение, но само за валидни билети.
     """
-    ticket = get_object_or_404(Ticket.objects.select_related("registration"), uuid=uuid)
+    ticket = get_object_or_404(
+        Ticket.objects.select_related("registration", "event"), uuid=uuid
+    )
 
     if not _user_can_see_registration(request.user, ticket.registration):
         raise Http404("Билетът не е намерен.")
@@ -240,11 +245,22 @@ def ticket_qr(request, uuid):
     if ticket.status == TicketStatus.CANCELLED:
         raise Http404("Билетът е анулиран.")
 
+    as_attachment = request.GET.get("download") == "1"
+    filename = f"bilet-{ticket.short_code}.png"
+
     if ticket.qr_image:
-        return FileResponse(ticket.qr_image.open("rb"), content_type="image/png")
+        return FileResponse(
+            ticket.qr_image.open("rb"),
+            content_type="image/png",
+            as_attachment=as_attachment,
+            filename=filename,
+        )
 
     png = render_qr_png(build_payload(ticket))
-    return HttpResponse(png, content_type="image/png")
+    response = HttpResponse(png, content_type="image/png")
+    if as_attachment:
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 @login_required

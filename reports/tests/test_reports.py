@@ -32,19 +32,19 @@ class EventReportAccuracyTests(TestCase):
     Известен набор от данни с ръчно пресметнати очаквани стойности.
 
     Сценарий:
-      * 3 участника купуват по 1 стандартен билет (по 40.00 лв.) — платени;
-      * 1 участник купува 2 VIP билета (по 100.00 лв.) — платени;
+      * 3 участника купуват по 1 стандартен билет (по 40.00 €) — платени;
+      * 1 участник купува 2 VIP билета (по 100.00 €) — платени;
       * 1 участник резервира 1 стандартен билет, но не плаща;
       * 1 участник купува 1 стандартен билет и после отказва заявката;
       * от платените влизат 3 души.
 
     Очаквани стойности:
       продадени билети  = 3 + 2 = 5
-      приходи           = 3×40 + 2×100 = 320.00 лв.
+      приходи           = 3×40 + 2×100 = 320.00 €
       присъствали       = 3
       посещаемост       = 3/5 = 60.0%
       неявили се        = 2
-      среден билет      = 320/5 = 64.00 лв.
+      среден билет      = 320/5 = 64.00 €
     """
 
     @classmethod
@@ -174,7 +174,7 @@ class OverviewReportTests(TestCase):
         cls.other = make_user("org_ov2", Role.ORGANIZER)
         cls.venue = make_venue(capacity=500)
 
-        # Събитие 1: 2 билета по 50.00 = 100.00 лв., 1 присъствал.
+        # Събитие 1: 2 билета по 50.00 = 100.00 €, 1 присъствал.
         cls.event1 = make_event(cls.organizer, venue=cls.venue, capacity=20, title="Първо")
         type1 = make_ticket_type(cls.event1, price="50.00", quota=20)
         user1 = make_user("ov_u1")
@@ -182,7 +182,7 @@ class OverviewReportTests(TestCase):
         simulate_payment(reg1, PaymentMethod.CARD)
         process_scan(build_payload(reg1.tickets.first()), cls.event1, cls.organizer)
 
-        # Събитие 2: 3 билета по 30.00 = 90.00 лв., без присъствали.
+        # Събитие 2: 3 билета по 30.00 = 90.00 €, без присъствали.
         cls.event2 = make_event(cls.organizer, venue=cls.venue, capacity=20, title="Второ")
         type2 = make_ticket_type(cls.event2, price="30.00", quota=20)
         user2 = make_user("ov_u2")
@@ -215,7 +215,7 @@ class OverviewReportTests(TestCase):
         own = Event.objects.filter(organizer=self.organizer)
         report = overview_report(own)
 
-        # 500.00 лв. от чуждото събитие не трябва да се появяват никъде.
+        # 500.00 € от чуждото събитие не трябва да се появяват никъде.
         self.assertNotIn(Decimal("690.00"), [report["revenue"]])
         self.assertEqual(report["revenue"], Decimal("190.00"))
 

@@ -91,7 +91,29 @@ class TicketTypeForm(BootstrapFormMixin, forms.ModelForm):
         widgets = {
             "sales_start": DateTimeLocalInput(),
             "sales_end": DateTimeLocalInput(),
+            # min и step се задават и на самото поле, за да не може браузърът
+            # изобщо да изпрати отрицателна цена или количество. Проверката на
+            # сървъра по-долу остава задължителна — HTML атрибутите се заобикалят
+            # лесно и не са мярка за сигурност.
+            "price": forms.NumberInput(attrs={"min": "0", "step": "0.01"}),
+            "quota": forms.NumberInput(attrs={"min": "1", "step": "1"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # PositiveIntegerField.formfield() задава min_value=0 и презаписва
+        # атрибута от Meta.widgets, затова долната граница се налага тук.
+        self.fields["quota"].min_value = 1
+        self.fields["quota"].widget.attrs["min"] = "1"
+
+    def clean_price(self):
+        """Цената не може да бъде отрицателна."""
+        price = self.cleaned_data.get("price")
+        if price is not None and price < 0:
+            raise forms.ValidationError(
+                "Цената не може да бъде отрицателна. Въведете 0 за безплатен билет."
+            )
+        return price
 
     def clean_quota(self):
         quota = self.cleaned_data["quota"]

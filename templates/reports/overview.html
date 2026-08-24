@@ -34,7 +34,7 @@
         <div class="col-6 col-lg-3">
             <div class="stat-card">
                 <div class="stat-value text-success">{{ revenue }}</div>
-                <div class="stat-label">Общо приходи (лв.)</div>
+                <div class="stat-label">Общо приходи (€)</div>
             </div>
         </div>
         <div class="col-6 col-lg-3">
@@ -93,7 +93,7 @@
                         <td class="text-end">{{ event.issued }} / {{ event.capacity }}</td>
                         <td class="text-end">{{ event.attended }}</td>
                         <td class="text-end">{{ event.attendance_percent }}%</td>
-                        <td class="text-end fw-semibold">{{ event.revenue }} лв.</td>
+                        <td class="text-end fw-semibold">{{ event.revenue }} €</td>
                         <td class="text-end">
                             <a href="{% url 'reports:event_report' slug=event.slug %}"
                                class="btn btn-sm btn-outline-secondary">Отчет</a>
@@ -109,7 +109,7 @@
                     <th class="text-end">{{ issued }}</th>
                     <th class="text-end">{{ attended }}</th>
                     <th class="text-end">{{ attendance_percent }}%</th>
-                    <th class="text-end">{{ revenue }} лв.</th>
+                    <th class="text-end">{{ revenue }} €</th>
                     <th></th>
                 </tr>
                 </tfoot>
@@ -132,7 +132,7 @@
                     labels: JSON.parse(document.getElementById('chart-labels').textContent),
                     datasets: [
                         {
-                            label: 'Приходи (лв.)',
+                            label: 'Приходи (€)',
                             data: JSON.parse(document.getElementById('chart-revenue').textContent),
                             backgroundColor: 'rgba(25, 135, 84, .7)',
                             borderRadius: 4,
@@ -154,7 +154,7 @@
                         y: {
                             beginAtZero: true,
                             position: 'left',
-                            title: { display: true, text: 'Приходи (лв.)' },
+                            title: { display: true, text: 'Приходи (€)' },
                         },
                         y1: {
                             beginAtZero: true,

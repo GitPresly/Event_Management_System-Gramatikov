@@ -12,12 +12,12 @@
 ДАННИ ЗА ЗАЯВКАТА
 -----------------
 Код на заявката: {{ registration.code }}
-Платена сума:    {{ registration.total_amount }} лв.
+Платена сума:    {{ registration.total_amount }} €
 Брой билети:     {{ tickets|length }}
 
 ВАШИТЕ БИЛЕТИ
 -------------
-{% for ticket in tickets %}{{ forloop.counter }}. Код {{ ticket.short_code }} — {{ ticket.ticket_type.name }} ({{ ticket.price_paid }} лв.)
+{% for ticket in tickets %}{{ forloop.counter }}. Код {{ ticket.short_code }} — {{ ticket.ticket_type.name }} ({{ ticket.price_paid }} €)
 {% endfor %}
 QR кодовете на билетите са прикачени към това писмо. Покажете ги на входа —
 всеки билет може да бъде използван само веднъж.

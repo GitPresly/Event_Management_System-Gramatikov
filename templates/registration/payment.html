@@ -48,9 +48,16 @@
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-success btn-lg">
-                                Плати {{ registration.total_amount }} лв.
+                                Плати {{ registration.total_amount }} €
                             </button>
-                            <a href="{{ registration.event.get_absolute_url }}" class="btn btn-outline-secondary">
+                            {% comment %}
+                                Контейнерът d-flex разтяга връзката до височината на
+                                по-големия бутон, но текстът в един <a> не се центрира
+                                сам по вертикала. Затова тук връзката сама е flex
+                                контейнер, който центрира съдържанието си.
+                            {% endcomment %}
+                            <a href="{{ registration.event.get_absolute_url }}"
+                               class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center">
                                 Назад
                             </a>
                         </div>
@@ -66,12 +73,12 @@
                     {% for ticket in tickets %}
                         <li class="list-group-item d-flex justify-content-between">
                             <span>{{ ticket.ticket_type.name }}</span>
-                            <span>{{ ticket.price_paid }} лв.</span>
+                            <span>{{ ticket.price_paid }} €</span>
                         </li>
                     {% endfor %}
                     <li class="list-group-item d-flex justify-content-between bg-light">
                         <strong>Общо ({{ registration.ticket_count }} бр.)</strong>
-                        <strong>{{ registration.total_amount }} лв.</strong>
+                        <strong>{{ registration.total_amount }} €</strong>
                     </li>
                 </ul>
                 <div class="card-body small text-muted">

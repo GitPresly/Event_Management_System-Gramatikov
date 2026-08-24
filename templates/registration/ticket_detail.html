@@ -54,16 +54,33 @@
                 <dl class="row small text-start mb-0">
                     <dt class="col-5">Притежател</dt>
                     <dd class="col-7">{{ ticket.holder_name }}</dd>
+                    <dt class="col-5">Имейл</dt>
+                    <dd class="col-7">{{ ticket.holder_email }}</dd>
                     <dt class="col-5">Билетен тип</dt>
-                    <dd class="col-7">{{ ticket.ticket_type.name }}</dd>
-                    <dt class="col-5">Цена</dt>
-                    <dd class="col-7">{{ ticket.price_paid }} лв.</dd>
+                    <dd class="col-7">
+                        {{ ticket.ticket_type.name }}
+                        {% if ticket.ticket_type.description %}
+                            <div class="text-muted">{{ ticket.ticket_type.description }}</div>
+                        {% endif %}
+                    </dd>
+                    <dt class="col-5">Платена цена</dt>
+                    <dd class="col-7 fw-semibold">
+                        {% if ticket.price_paid %}{{ ticket.price_paid }} €{% else %}Безплатен{% endif %}
+                    </dd>
                     <dt class="col-5">Заявка</dt>
                     <dd class="col-7">
                         <a href="{{ ticket.registration.get_absolute_url }}" class="text-mono">
                             {{ ticket.registration.code }}
                         </a>
                     </dd>
+                    {% if ticket.registration.payment %}
+                        <dt class="col-5">Начин на плащане</dt>
+                        <dd class="col-7">{{ ticket.registration.payment.get_method_display }}</dd>
+                        <dt class="col-5">Платено на</dt>
+                        <dd class="col-7">{{ ticket.registration.payment.created_at|date:"d.m.Y, H:i" }}</dd>
+                    {% endif %}
+                    <dt class="col-5">Издаден на</dt>
+                    <dd class="col-7">{{ ticket.issued_at|date:"d.m.Y, H:i" }}</dd>
                 </dl>
             </div>
 
@@ -74,13 +91,20 @@
                 </div>
             {% endif %}
 
-            <div class="d-flex gap-2 mt-3 no-print">
+            <div class="d-flex flex-wrap gap-2 mt-3 no-print">
+                {% if ticket.status == 'VALID' or ticket.status == 'USED' %}
+                    {# download=1 кара сървъра да отдаде файла като прикачен. #}
+                    <a href="{% url 'registration:ticket_qr' uuid=ticket.uuid %}?download=1"
+                       class="btn btn-primary" download="bilet-{{ ticket.short_code }}.png">
+                        ⬇ Изтегли QR кода
+                    </a>
+                {% endif %}
+                <button type="button" class="btn btn-outline-primary" onclick="window.print();">
+                    🖨 Разпечатай
+                </button>
                 <a href="{% url 'registration:my_tickets' %}" class="btn btn-outline-secondary">
                     Всички мои билети
                 </a>
-                <button type="button" class="btn btn-outline-primary" onclick="window.print();">
-                    Разпечатай
-                </button>
             </div>
         </div>
     </div>
